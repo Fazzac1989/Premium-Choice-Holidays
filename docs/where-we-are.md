@@ -18,7 +18,7 @@ scope is out.
 | 3 | Auth and RLS | applied and verified live |
 | — | Next.js scaffold | done |
 | 4 | Supplier adapter + mock | done |
-| 5 | Package assembly service | not started |
+| 5 | Package assembly service | done |
 | 6 | Admin UI | not started |
 
 ## Outstanding right now
@@ -124,13 +124,41 @@ Decisions that are not obvious from the code:
 - Dates are `YYYY-MM-DD` strings end to end, parsed as UTC. Free-cancel
   deadlines are stated with an explicit `+04:00` offset.
 
-## Session 5, when it starts
+## Session 5 — done
 
-Package assembly service. Consumes the adapter through
-`createSupplierAdapter()`; writes `external_bookings` rows from
-`ExternalBooking` plus our booking_id/quote_item_id. The
-payment-then-booking path per "Decisions" above: reconcile before retry on
-indeterminate, straight to failed_rollback on deterministic. Fee rules from
-`property_fees`; a property with no fee rows (all of Abu Dhabi) raises a task,
-never prices zero. Unknown tax treatment raises a task. Components exact,
-package total rounded up to `brands.rounding_increment`, delta retained.
+Assembly service in `src/lib/assembly`, README section "The assembly service".
+Not obvious from the code:
+
+- **The engine is pure and the rule types are the DB Row types.** The loader
+  that fetches rule rows from Supabase does not exist yet — Session 6 writes
+  it when the admin UI first needs a real quote. `SupabaseBookingStore`
+  (`booking/store.supabase.ts`) exists but nothing constructs it yet; it is
+  deliberately NOT exported from the assembly index because it imports
+  'server-only', which would poison Vitest.
+- **resolveMarkupPct/feesForProperty are duplicated in TS by design**, in
+  lockstep with the SQL functions of the same names. Change one, change both.
+- **Idempotency keys are derived: `bookingRef:quoteItemId`.** A crashed
+  orchestrator run re-derives the same key and adopts its own earlier attempt
+  (tested). Do not switch to random keys.
+- **The orchestrator reconciles before the FIRST attempt too** — one extra
+  findByReference call per component, and it is what makes crash recovery
+  work.
+- **PostgREST has no cross-statement transactions.** The Supabase store relies
+  on write ORDER (refund + task before failed_rollback; vouchers before
+  confirmed) which the DB guards then verify at transition time. A crash
+  mid-sequence leaves supplier_booking with evidence rows present; re-running
+  the orchestrator completes it via key reconciliation.
+- **The in-memory store enforces the DB guards** (store.memory.ts). If an
+  orchestrator change violates the state machine, tests fail the way
+  production would. Keep the guards when extending it.
+- **Below margin floor is an approval gate (approve_quote task), not a block.**
+  Missing fee rules, unknown tax, unpriceable component ARE blocks.
+
+## Session 6, when it starts
+
+Admin UI. shadcn/ui init (interactive — deferred to here on purpose). The
+loaders: rule rows for assemblePackage(), and the quote/booking persistence
+that pairs with SupabaseBookingStore. Screens per ai-front-end-spec.md minus
+the out-of-scope areas (golf, LPOs, on-request, supplier confirmations).
+Vercel deploy + Supabase URL configuration are still outstanding from the
+Session 3 handoff, as is the git remote.

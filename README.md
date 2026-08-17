@@ -17,7 +17,7 @@ confirms instantly. Nothing here may compromise that.
 | 2 | Migrations | applied and inspected |
 | 3 | Auth and RLS | applied and verified against live Supabase Auth |
 | 4 | Supplier adapter + mock | done |
-| 5 | Package assembly service | not started |
+| 5 | Package assembly service | done |
 | 6 | Admin UI | not started |
 
 ## Applying the schema
@@ -131,6 +131,34 @@ Two properties of the mock are load-bearing:
   Supplier refs come from a counter; the clock is injectable.
 
 `npm test` runs the suite (Vitest).
+
+## The assembly service
+
+`src/lib/assembly`. Pure functions — rule rows in, a priced package out; the
+rule row types ARE the generated database Row types, so a migration that
+changes a rule table breaks compilation here. The TS engine mirrors the SQL
+functions (`resolve_markup_pct`, `fees_for_property`) semantics exactly; a
+change to either side must be mirrored in the other.
+
+`assemblePackage()` refuses to guess. No matching markup rule, no matching fee
+rule (all of Abu Dhabi), an unstated tax treatment, an unpriceable guest —
+each raises the corresponding task (`missing_fee_rules`,
+`tax_treatment_unknown`, …) and marks the package unsellable rather than
+inventing a number. Components stay exact; the one rounding is UP at the
+package total, in integer fils, delta retained as `rounding_delta`. Excluded
+extras (ineligible, lead time closed, rate out of validity, inactive) are
+reported with reasons, never silently dropped.
+
+`executeSupplierBooking()` in `assembly/booking` is the payment-then-booking
+path. Idempotency keys are derived (`bookingRef:quoteItemId`), not random, so
+a crashed run reconciles into its own earlier attempt. It reconciles via
+`findByReference` before every attempt, retries only indeterminate failures,
+sends deterministic ones straight to rollback, cancels confirmed siblings on
+the way down (raising `rollback_manual_cancel` naming every ref the supplier
+refused), and satisfies the state-machine guards in write order: refund and
+urgent task before `failed_rollback`, vouchers before `confirmed`. The
+in-memory test store enforces the same guards as the DB trigger, so the tests
+fail the way production would.
 
 ## Reference documents
 

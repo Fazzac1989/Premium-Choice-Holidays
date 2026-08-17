@@ -1,0 +1,74 @@
+# ---------------------------------------------------------------- secrets ---
+# SUPABASE_SERVICE_ROLE_KEY bypasses every RLS policy in this project. If it
+# reaches a public repo, rotate it in Supabase immediately — removing the
+# commit is not enough.
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.pem
+*.key
+
+# ----------------------------------------------------------- dependencies ---
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ------------------------------------------------------------------ build ---
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# ------------------------------------------------------------------- test ---
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# --------------------------------------------------------------- supabase ---
+# Local CLI state. config.toml and everything under migrations/ and tests/ IS
+# tracked — the schema is the point.
+supabase/.temp/
+supabase/.branches/
+supabase/logs/
+supabase/seed.local.sql
+
+# ----------------------------------------------------------------- vercel ---
+.vercel/
+
+# ------------------------------------------------------------------- logs ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ------------------------------------------------------------------ tools ---
+.eslintcache
+.turbo/
+.cache/
+
+# ------------------------------------------------- windows, onedrive, macos ---
+# This working copy lives inside a OneDrive folder, so the sync client's own
+# artefacts turn up in the tree.
+desktop.ini
+Thumbs.db
+ehthumbs.db
+~$*
+*.tmp
+.DS_Store
+
+# ------------------------------------------------------------------- IDEs ---
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

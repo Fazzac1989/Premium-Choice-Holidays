@@ -29,12 +29,10 @@ scope is out.
    notices, which the Supabase SQL editor does not display, and one vacuous
    assertion was fixed — `extra_eligibility` had no fixture row, so the blocked
    update matched nothing whatever the policy said.
-2. **No git remote.** The GitHub repo was going to be created by hand. Once it
-   exists: `git remote add origin …` then push.
-3. **Vercel not set up.** Decision was to deploy the bare scaffold early so the
-   pipeline is proven while it is trivial to debug. After deploying, add the
-   Vercel domain to Supabase → Authentication → URL Configuration or logins
-   work locally and fail deployed.
+2. ~~No git remote.~~ **Done, Session 6.**
+   `github.com/Fazzac1989/Premium-Choice-Holidays`, main tracking origin/main.
+3. ~~Vercel not set up.~~ **Done, Session 6.** Deployed, env vars set, and the
+   Vercel domain added to Supabase → Authentication → URL Configuration.
 
 ## Decisions that are not obvious from the code
 
@@ -194,8 +192,8 @@ editing, customers/enquiries screens.
 
 ## Still outstanding (operational, not code)
 
-- Git remote + push.
-- Vercel deploy, then the Vercel domain into Supabase → Authentication → URL
-  Configuration (logins fail deployed otherwise).
 - `pg_cron` enablement check for the watchdog (Session 3 note, still
-  unconfirmed).
+  unconfirmed): Supabase → Database → Extensions, then section 8 of
+  `verify_session2.sql` reports whether the job is scheduled.
+- A signed-in walk of the deployed app — the full loop in "First run of the
+  UI" above, on the Vercel domain.

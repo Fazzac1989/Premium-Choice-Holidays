@@ -17,7 +17,7 @@ scope is out.
 | 2 | Migrations | done, applied, verified |
 | 3 | Auth and RLS | applied and verified live |
 | — | Next.js scaffold | done |
-| 4 | Supplier adapter + mock | not started |
+| 4 | Supplier adapter + mock | done |
 | 5 | Package assembly service | not started |
 | 6 | Admin UI | not started |
 
@@ -97,17 +97,40 @@ scope is out.
 - shadcn/ui is not installed. Deferred to Session 6, where components are
   actually needed; its init is interactive.
 
-## Session 4, when it starts
+## Session 4 — done
 
-Supplier adapter layer. Interface with `MockAdapter` and `WebBedsAdapter`
-behind a feature flag, per `SUPPLIER_ADAPTER` in `.env.local`. The interface
-takes the agreed change:
+Supplier layer in `src/lib/suppliers`, README section "The supplier layer".
+Decisions that are not obvious from the code:
 
-```ts
-book(quote: StayQuote, guests: Guest[], idempotencyKey: string): Promise<ExternalBooking>;
-findByReference(idempotencyKey: string): Promise<ExternalBooking | null>;
-```
+- **The mock does not deduplicate on the idempotency key**, deliberately.
+  Whether WebBeds honours a replayed key is unknown until certification, so the
+  mock assumes a blind retry double-books. Session 5's booking path MUST
+  reconcile via `findByReference` before retrying an indeterminate failure —
+  the tests fail with two bookings if it doesn't. Do not make the mock
+  forgiving before certification evidence says so.
+- **`ExternalBooking` carries no booking_id or quote_item_id.** Which component
+  a supplier record satisfies is our fact, not the supplier's; Session 5
+  attaches those when writing the row.
+- **Unknown-not-false runs through everything**: `netRateTaxInclusive: null`
+  (two fixtures, in different emirates), missing star ratings blocking sale via
+  `propertyContentGaps()` (star rating selects the Tourism Dirham band), Abu
+  Dhabi present in fixtures precisely because `property_fees` has no AD rows.
+- **Errors classify themselves** (`failureClass` on `SupplierError`, same enum
+  as the schema). `requiresReconciliation()` treats any non-SupplierError as
+  indeterminate — "unknown" is not "nothing happened".
+- **Guest problems are `InvalidGuestError`** (deterministic, supplier-visible),
+  not RangeError — they must route to failed_rollback, not the retry loop.
+  Malformed searches ARE RangeError: a caller bug, not a supplier failure.
+- Dates are `YYYY-MM-DD` strings end to end, parsed as UTC. Free-cancel
+  deadlines are stated with an explicit `+04:00` offset.
 
-Mock fixtures cover 30 UAE properties across Dubai, Abu Dhabi and RAK, plus the
-failure cases: sold out between quote and book, price moved, timeout, partial
-content, and the timeout-that-actually-succeeded.
+## Session 5, when it starts
+
+Package assembly service. Consumes the adapter through
+`createSupplierAdapter()`; writes `external_bookings` rows from
+`ExternalBooking` plus our booking_id/quote_item_id. The
+payment-then-booking path per "Decisions" above: reconcile before retry on
+indeterminate, straight to failed_rollback on deterministic. Fee rules from
+`property_fees`; a property with no fee rows (all of Abu Dhabi) raises a task,
+never prices zero. Unknown tax treatment raises a task. Components exact,
+package total rounded up to `brands.rounding_increment`, delta retained.

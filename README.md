@@ -16,7 +16,7 @@ confirms instantly. Nothing here may compromise that.
 | 1 | Plan | done |
 | 2 | Migrations | applied and inspected |
 | 3 | Auth and RLS | applied and verified against live Supabase Auth |
-| 4 | Supplier adapter + mock | not started |
+| 4 | Supplier adapter + mock | done |
 | 5 | Package assembly service | not started |
 | 6 | Admin UI | not started |
 
@@ -103,6 +103,34 @@ booking is cancelled through the state machine, never removed.
 - `agent_actions` is append-only.
 - Child age bands on a rate row cannot overlap.
 - A contracted product cannot be non-freesale.
+
+## The supplier layer
+
+`src/lib/suppliers`. Everything above it imports `createSupplierAdapter()`
+from the index and never a concrete adapter; `SUPPLIER_ADAPTER` in `.env.local`
+selects `mock` or `webbeds`, and an unset or unrecognised value crashes rather
+than defaulting — the nightmare misconfiguration is production quietly serving
+mock inventory.
+
+The mock carries thirty real UAE properties (16 Dubai, 7 Abu Dhabi, 7 RAK —
+real names, real areas, real star ratings, invented rates) plus six scenario
+properties, `SCN-*`, that misbehave on demand: sold out on book, price moved,
+timeout, timeout-that-actually-succeeded, partial content, rejected guests.
+Failure is fixture data, not a test-only API — the admin UI can reproduce any
+of them by booking the right property.
+
+Two properties of the mock are load-bearing:
+
+- **It does not deduplicate on the idempotency key.** Whether WebBeds honours
+  a replayed key is unknown until certification, so the mock assumes the worst:
+  a blind retry creates a second supplier booking. The reconciliation step
+  (`findByReference` before any retry of an indeterminate failure) is therefore
+  the only thing standing between a timeout and a double charge, and the test
+  suite proves both the disaster and its prevention.
+- **It is deterministic.** Same search, same price, any machine, any day.
+  Supplier refs come from a counter; the clock is injectable.
+
+`npm test` runs the suite (Vitest).
 
 ## Reference documents
 

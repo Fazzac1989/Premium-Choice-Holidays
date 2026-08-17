@@ -19,7 +19,7 @@ scope is out.
 | — | Next.js scaffold | done |
 | 4 | Supplier adapter + mock | done |
 | 5 | Package assembly service | done |
-| 6 | Admin UI | not started |
+| 6 | Admin UI | done; catalogue editing deferred |
 
 ## Outstanding right now
 
@@ -154,11 +154,48 @@ Not obvious from the code:
 - **Below margin floor is an approval gate (approve_quote task), not a block.**
   Missing fee rules, unknown tax, unpriceable component ARE blocks.
 
-## Session 6, when it starts
+## Session 6 — done
 
-Admin UI. shadcn/ui init (interactive — deferred to here on purpose). The
-loaders: rule rows for assemblePackage(), and the quote/booking persistence
-that pairs with SupabaseBookingStore. Screens per ai-front-end-spec.md minus
-the out-of-scope areas (golf, LPOs, on-request, supplier confirmations).
-Vercel deploy + Supabase URL configuration are still outstanding from the
-Session 3 handoff, as is the git remote.
+Admin UI, README section "The admin UI". Not obvious from the code:
+
+- **shadcn 4.x generated Base UI components, not Radix.** Composition is via
+  `render` props (`<Button render={<Link …/>} />`), not `asChild`. RTL support
+  was enabled at init (`--rtl`) for the Arabic-first requirement; use logical
+  CSS properties (`ms-`/`me-`/`border-e`) in new UI, not `ml-`/`mr-`.
+- **The room quote item carries `supplierQuote` and `guests` inside
+  `pricing_detail`.** The booking runner books from that stored offer rather
+  than re-searching, so the price booked is the price quoted. Breaking this
+  contract breaks createBookingFromQuote and runSupplierBooking.
+- **Quote preview and save both re-assemble server-side** from the request;
+  prices never round-trip through the browser.
+- **The service client appears in exactly two actions** (properties sync,
+  supplier run), each re-checking the caller's role because the service key
+  bypasses RLS. Keep it that way — everything else goes through the
+  user-session client so RLS is the enforcement.
+- **Tasks order by enum position**: priority ascending gives urgent first
+  because the enum declares urgent before normal before low.
+
+Deferred from Session 6: catalogue editing (products/rates/bands/eligibility/
+fee rules — Extras screen is read-only, rows load by SQL), property overrides
+editing, customers/enquiries screens.
+
+## First run of the UI
+
+1. `.env.local` from the example: Supabase keys + `SUPPLIER_ADAPTER=mock`.
+2. Sign in with one of the two verification users.
+3. Settings: create the brand, then markup rules (api/all-types and
+   contracted/all-types at minimum — assembly refuses to price without them).
+4. Properties: Sync from supplier (admin) — loads the 36 mock properties.
+5. New quote → preview → save → create booking → record payment → run
+   supplier booking. Book a SCN-* property to watch a failure path: the
+   rollback raises the refund row, the urgent task, and lands in
+   failed_rollback with the mock's deliberate non-deduplication proving the
+   reconcile step.
+
+## Still outstanding (operational, not code)
+
+- Git remote + push.
+- Vercel deploy, then the Vercel domain into Supabase → Authentication → URL
+  Configuration (logins fail deployed otherwise).
+- `pg_cron` enablement check for the watchdog (Session 3 note, still
+  unconfirmed).

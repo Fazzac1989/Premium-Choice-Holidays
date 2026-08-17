@@ -18,7 +18,7 @@ confirms instantly. Nothing here may compromise that.
 | 3 | Auth and RLS | applied and verified against live Supabase Auth |
 | 4 | Supplier adapter + mock | done |
 | 5 | Package assembly service | done |
-| 6 | Admin UI | not started |
+| 6 | Admin UI | done — catalogue editing deferred, see below |
 
 ## Applying the schema
 
@@ -159,6 +159,35 @@ refused), and satisfies the state-machine guards in write order: refund and
 urgent task before `failed_rollback`, vouchers before `confirmed`. The
 in-memory test store enforces the same guards as the DB trigger, so the tests
 fail the way production would.
+
+## The admin UI
+
+Next.js App Router under `src/app`. `/login` is the only public route; the
+middleware gates everything else on a verified session, and RLS — not the UI —
+is the enforcement: staff actions run through the user-session client
+(`lib/supabase/server.ts`), so an operator pressing an admin button receives
+the database's refusal.
+
+The service client appears in exactly two server actions, each of which
+re-checks the caller's role itself because the service key bypasses RLS:
+
+- **Properties sync** (`properties/actions.ts`) — refreshes the read-only
+  supplier cache from the adapter; overrides survive by design.
+- **The supplier run** (`bookings/actions.ts`) — `runSupplierBooking` feeds
+  the Session 5 orchestrator with `SupabaseBookingStore`.
+
+The working loop: Settings (create brand, markup rules) → Properties (sync)
+→ New quote (assemble, preview, save — prices never round-trip through the
+browser; saving re-assembles from rows) → quote detail (Create booking) →
+booking detail (record payment, run supplier booking) → Tasks (whatever the
+run raised). The room quote item carries the supplier offer and guest specs in
+`pricing_detail`, which is how the booking runner books the price that was
+quoted rather than re-searching.
+
+**Deferred**: catalogue editing (products, rates, bands, eligibility, fee
+rules) — the Extras screen is read-only and rows load by SQL for now.
+Property overrides editing and customer/enquiry screens are likewise not
+built. Everything else in the access model has a surface.
 
 ## Reference documents
 

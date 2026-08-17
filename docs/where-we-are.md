@@ -15,7 +15,7 @@ scope is out.
 |---|---|---|
 | 1 | Plan | done |
 | 2 | Migrations | done, applied, verified |
-| 3 | Auth and RLS | migrations applied; **live verification outstanding** |
+| 3 | Auth and RLS | applied and verified live |
 | — | Next.js scaffold | done |
 | 4 | Supplier adapter + mock | not started |
 | 5 | Package assembly service | not started |
@@ -23,13 +23,12 @@ scope is out.
 
 ## Outstanding right now
 
-1. **Run `supabase/tests/verify_session3.sql`** against the live project. It
-   needs two users to exist first (Authentication → Users → Add user, twice —
-   first becomes admin, second operator). Confirm with
-   `select email, role from profiles;`. This is the check the run guide calls
-   the foundation: if an operator can write to `product_rates`, everything
-   after is built on sand. The script passed 25 assertions in Docker against a
-   stubbed auth schema, but has not run against real Supabase Auth.
+1. ~~Run `verify_session3.sql` against the live project.~~ **Done, Session 4.**
+   Ran clean against real Supabase Auth with two users created by hand. The
+   script has since been rewritten to report through a result set rather than
+   notices, which the Supabase SQL editor does not display, and one vacuous
+   assertion was fixed — `extra_eligibility` had no fixture row, so the blocked
+   update matched nothing whatever the policy said.
 2. **No git remote.** The GitHub repo was going to be created by hand. Once it
    exists: `git remote add origin …` then push.
 3. **Vercel not set up.** Decision was to deploy the bare scaffold early so the

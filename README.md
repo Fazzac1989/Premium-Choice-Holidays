@@ -15,7 +15,7 @@ confirms instantly. Nothing here may compromise that.
 |---|---|---|
 | 1 | Plan | done |
 | 2 | Migrations | applied and inspected |
-| 3 | Auth and RLS | **awaiting apply and inspect** |
+| 3 | Auth and RLS | applied and verified against live Supabase Auth |
 | 4 | Supplier adapter + mock | not started |
 | 5 | Package assembly service | not started |
 | 6 | Admin UI | not started |
@@ -37,6 +37,12 @@ run it whole. It rolls back at the end and leaves no data behind.
 Authentication → Users → Add user, twice. The first becomes an admin, the
 second an operator. Check with `select email, role from profiles;` before
 running it.
+
+It ends in a select rather than notices, because the SQL editor does not
+display `raise notice`. The first row of the result is the summary; failures
+sort directly beneath it. Assertions record a FAIL row instead of raising, so
+one broken policy does not mask the ones behind it — an error from this script
+means something unplanned happened, not that an assertion failed.
 
 `pg_cron` may need enabling once from Supabase → Database → Extensions before
 migration 15 can schedule the watchdog. Migration 15 says so in a notice rather

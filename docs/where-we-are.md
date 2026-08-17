@@ -203,6 +203,17 @@ editing, customers/enquiries screens.
   supplier record, the sold-out scenario rolled back with the refund row and
   urgent task, and an Abu Dhabi quote blocked with missing_fee_rules.
 
+## The extras catalogue
+
+Seeded from `supabase/seed/extras_catalogue.sql` — eight real UAE extras
+(five Dubai, two Abu Dhabi, one RAK), bilingual, with child bands and every
+eligibility scope represented. Verified live: area scoping (Wild Wadi attaches
+in Umm Suqeim, excluded elsewhere), markup-rule pricing (Aquaventure has null
+sell prices on purpose), and vouchers minting at confirmation, one per
+contracted extra. The seed is re-runnable; products are skipped by name.
+Until the catalogue admin screens exist, this file is how extras are loaded —
+extend it rather than inserting ad hoc.
+
 ## Deployment facts
 
 - GitHub: `Fazzac1989/Premium-Choice-Holidays` (repo name differs from the

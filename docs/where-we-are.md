@@ -192,8 +192,9 @@ editing, customers/enquiries screens.
 
 ## Still outstanding (operational, not code)
 
-- `pg_cron` enablement check for the watchdog (Session 3 note, still
-  unconfirmed): Supabase → Database → Extensions, then section 8 of
-  `verify_session2.sql` reports whether the job is scheduled.
+- ~~`pg_cron` for the watchdog.~~ **Done, Session 6.** The extension was
+  enabled after migration 15 ran, so the migration's schedule block had been
+  skipped — cron.job was empty. Scheduled by hand with the call from the
+  migration's notice; `escalate-stuck-bookings` runs every minute, active.
 - A signed-in walk of the deployed app — the full loop in "First run of the
-  UI" above, on the Vercel domain.
+  UI" above, on the Vercel domain. In progress.

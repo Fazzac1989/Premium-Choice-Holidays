@@ -14,8 +14,8 @@ confirms instantly. Nothing here may compromise that.
 | Session | Scope | State |
 |---|---|---|
 | 1 | Plan | done |
-| 2 | Migrations | **awaiting apply and inspect** |
-| 3 | Auth and RLS | not started |
+| 2 | Migrations | applied and inspected |
+| 3 | Auth and RLS | **awaiting apply and inspect** |
 | 4 | Supplier adapter + mock | not started |
 | 5 | Package assembly service | not started |
 | 6 | Admin UI | not started |
@@ -32,6 +32,11 @@ supabase gen types typescript --linked > src/types/database.ts
 
 Then paste `supabase/tests/verify_session2.sql` into the Supabase SQL editor and
 run it whole. It rolls back at the end and leaves no data behind.
+
+`verify_session3.sql` covers auth and RLS and needs two users to exist first:
+Authentication → Users → Add user, twice. The first becomes an admin, the
+second an operator. Check with `select email, role from profiles;` before
+running it.
 
 `pg_cron` may need enabling once from Supabase → Database → Extensions before
 migration 15 can schedule the watchdog. Migration 15 says so in a notice rather
@@ -56,9 +61,30 @@ than failing.
 | 13 | booking_state_machine | the guards |
 | 14 | locked_strings_guard | legal copy protected against a service key |
 | 15 | watchdog | pg_cron escalation of stranded bookings |
+| 16a | fix_handle_new_user_role_cast | repairs a broken enum cast in 02 |
+| 16 | rls_grants_and_helpers | `anon` revoked, RLS enabled everywhere |
+| 17 | rls_policies | admin/operator separation |
+| 18 | voucher_reissue | the only write path operators have to vouchers |
 
-RLS is deliberately absent — it lands in Session 3, on every table including the
-dormant ones.
+## The access model
+
+Supabase gives every logged-in user the same database role, `authenticated`, so
+grants describe what the application may attempt at all and RLS decides who may
+actually do it. `anon` holds nothing — Phase 1 has no public surface.
+
+| | Operator | Admin |
+|---|---|---|
+| Read everything | yes | yes |
+| Tasks, messages | write | write |
+| Vouchers | reissue only, via RPC | update |
+| Catalogue, rates, eligibility, brands | no | write |
+| Bookings, payments, quotes | no | write |
+| Properties cache, external bookings | no | no — service key only |
+| Locked strings | no | via `admin_update_locked_string()` only |
+
+Nothing anywhere uses a blanket `using (true)`; the verification script asserts
+it. Deletes are not granted on bookings, payments or vouchers by anyone — a
+booking is cancelled through the state machine, never removed.
 
 ## Things that are enforced in the database, not in code
 

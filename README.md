@@ -1,10 +1,15 @@
-# Premium Staycations — Phase 1
+# Premium Staycations
 
-Admin platform and system of record for premiumstaycations.com. UAE hotel
+Platform and system of record for premiumstaycations.com. UAE hotel
 staycations sold to UAE residents in English and Arabic.
 
-Phase 1 builds the database, the admin UI, the supplier abstraction and the
-package assembly service. It builds no agents and no customer-facing site.
+Phase 1 built the database, the admin UI (now under `/admin`), the supplier
+abstraction and the package assembly service. Phase 2a added the customer
+funnel at `/en` and `/ar`: browse → package → checkout → pay (mock gateway)
+→ confirmation, running on the same assembly engine and orchestrator as the
+admin UI — quotes are the artefact both front ends produce. See
+`docs/phase2-customer-front-end.md` for the design and what remains (real
+gateway, email, voucher PDFs, imagery, the concierge).
 
 **The property the whole design rests on:** every component of every booking
 confirms instantly. Nothing here may compromise that.

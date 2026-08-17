@@ -1,10 +1,15 @@
 /**
- * Premium Staycations — Phase 1
- * Session refresh and the login gate.
+ * Premium Staycations — Phase 2a
+ * Session refresh and the admin gate.
  *
- * Phase 1 has no public surface: everything except /login requires a session.
- * The role split (operator vs admin) is not enforced here — RLS is the
- * enforcement, and the UI merely hides what a role cannot use.
+ * The public customer site lives at /en and /ar and needs no session. The
+ * admin UI lives under /admin and requires one. The role split (operator vs
+ * admin) is still not enforced here — RLS is the enforcement, and the UI
+ * merely hides what a role cannot use.
+ *
+ * The customer site holds to the Phase 1 rule that `anon` has no grants:
+ * public pages read and write only through server code, so there is nothing
+ * for an unauthenticated browser to reach directly.
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -39,18 +44,20 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLogin = request.nextUrl.pathname.startsWith('/login');
+  const { pathname } = request.nextUrl;
+  const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/');
+  const isLogin = pathname.startsWith('/login');
 
-  if (!user && !isLogin) {
+  if (isAdmin && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('next', request.nextUrl.pathname);
+    url.searchParams.set('next', pathname);
     return NextResponse.redirect(url);
   }
 
-  if (user && isLogin) {
+  if (isLogin && user) {
     const url = request.nextUrl.clone();
-    url.pathname = '/';
+    url.pathname = '/admin';
     url.search = '';
     return NextResponse.redirect(url);
   }
@@ -59,6 +66,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except static assets and Next internals.
+  // Everything except static assets and Next internals. Public pages still
+  // pass through so an admin browsing the site keeps their session fresh.
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.svg$).*)'],
 };

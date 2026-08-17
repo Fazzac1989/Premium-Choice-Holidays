@@ -41,7 +41,7 @@ function LoginForm() {
       return;
     }
 
-    router.replace(searchParams.get('next') ?? '/');
+    router.replace(searchParams.get('next') ?? '/admin');
     router.refresh();
   }
 

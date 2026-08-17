@@ -214,6 +214,37 @@ contracted extra. The seed is re-runnable; products are skipped by name.
 Until the catalogue admin screens exist, this file is how extras are loaded —
 extend it rather than inserting ad hoc.
 
+## Phase 2a — the customer funnel (built, awaiting live walkthrough)
+
+Public site at `/en` and `/ar` (RTL), admin moved to `/admin` — old admin
+URLs like `/tasks` are now `/admin/tasks`. Not obvious from the code:
+
+- **The funnel's three public writes** (enquiry, checkout, payment
+  completion) run on the service client behind zod, because `anon` still
+  holds zero grants. `src/lib/catalog.ts` is the only public read path.
+- **`assembleFunnelPackage()` in `src/lib/funnel.ts` is shared by the package
+  page and checkout** — the browser sends inputs, never prices; checkout
+  re-assembles and persists what it computes.
+- **`completePayment()` in `src/lib/payments/complete.ts` is the gateway
+  seam.** The mock pay page calls it via a server action; a real gateway's
+  signature-verified webhook route calls the same function. Idempotent by
+  gateway_ref; a replayed webhook re-runs the orchestrator, which reconciles
+  by derived idempotency key instead of rebooking.
+- **Scenario properties are excluded from the public catalogue** by
+  `isPublicProperty()` (pinned by test). Staff reproduce failures from the
+  admin UI; customers cannot book a staged failure.
+- **A blocked package renders an enquiry form, never a price** — writes an
+  `enquiries` row with `source='web:package_blocked'`.
+- **The rollback page renders the locked string**
+  `booking.failed_rollback.email_body` with placeholders filled: initiated,
+  never completed.
+- Web-channel quotes persist as `auto_approved` with `raised_by
+  'system:web_funnel'` tasks; funnel bookings carry `customer_id`.
+
+Deferred within 2a: real gateway, transactional email, voucher PDFs,
+property imagery (placeholder gradients until certification content), rate
+limiting on the public writes, SEO surface.
+
 ## Deployment facts
 
 - GitHub: `Fazzac1989/Premium-Choice-Holidays` (repo name differs from the

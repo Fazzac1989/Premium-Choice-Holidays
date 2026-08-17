@@ -196,5 +196,26 @@ editing, customers/enquiries screens.
   enabled after migration 15 ran, so the migration's schedule block had been
   skipped — cron.job was empty. Scheduled by hand with the call from the
   migration's notice; `escalate-stuck-bookings` runs every minute, active.
-- A signed-in walk of the deployed app — the full loop in "First run of the
-  UI" above, on the Vercel domain. In progress.
+- ~~A signed-in walk of the deployed app.~~ **Done — Phase 1 verified live.**
+  On the deployed Vercel app: brand + markup rules created, 36 properties
+  synced, clean Dubai booking confirmed with one supplier record, the
+  timeout-that-succeeded scenario reconciled to confirmed with exactly one
+  supplier record, the sold-out scenario rolled back with the refund row and
+  urgent task, and an Abu Dhabi quote blocked with missing_fee_rules.
+
+## Deployment facts
+
+- GitHub: `Fazzac1989/Premium-Choice-Holidays` (repo name differs from the
+  project name on purpose of history, not design).
+- Vercel project: `premium-staycations` (named from package.json), domain
+  `premium-staycations.vercel.app` — this is the URL in Supabase URL
+  Configuration, NOT the repo-named one.
+- The original Vercel import had a non-Next.js framework preset baked into
+  its production deployment; fixed in project settings, and any redeploy of a
+  pre-fix deployment would resurrect it via Production Overrides. Deploy by
+  pushing to main.
+- `NEXT_PUBLIC_*` env vars are baked at build time — after editing one in
+  Vercel, a fresh deployment is required before anything changes.
+- Supabase project ref: `lxjqhvvgchehylenhxoq`. The env URL is the bare
+  `https://lxjqhvvgchehylenhxoq.supabase.co` — a pasted `/rest/v1/` suffix
+  produces "Invalid path specified in request URL" at sign-in.
